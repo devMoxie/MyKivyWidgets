@@ -1,6 +1,6 @@
 # My Kivy Widgets
 
-The modules are some widgets I used in my latest project.
+These modules are some widgets I used in my latest project.
 
 Feel free to use them, provide feedback and make improvements.
 
