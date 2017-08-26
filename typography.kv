@@ -1,0 +1,100 @@
+#:import get_color_from_hex kivy.utils.get_color_from_hex
+#:import icon icons.iconfonts.icon
+#:import webbrowser webbrowser
+
+<Heading>:
+    markup: True
+    font_name: 'RobotoLight'
+    bold: True
+    size_hint_y: None
+    text_size: self.width, None
+    height: self.texture_size[1]    
+
+<H1>:
+    font_size: "38sp"
+
+<H2>:
+    font_size: "34sp"
+
+<H3>:
+    font_size: "30sp"
+
+<H4>:
+    font_size: "26sp"
+
+<H5>:
+    font_size: "23sp"
+
+<H6>:
+    font_size: "20sp"
+
+<P>:
+    markup: True
+    font_size: "17sp"
+    padding_y: dp(5)
+    size_hint_y: None
+    text_size: self.width, None
+    height: self.texture_size[1] 
+
+<Lead>:
+    markup: True
+    font_name: 'RobotoLight'
+    bold: True
+    italic: True
+    font_size: "20sp"
+    size_hint_y: None
+    text_size: self.width, None
+    height: self.texture_size[1]
+    padding: [dp(20), dp(10)]
+    canvas.before:
+        Color:
+            rgba: get_color_from_hex("4d8cf5")
+        Rectangle:
+            size: [5, self.height]
+            pos: self.pos
+
+<Link>:
+    url: ""
+    markup: True
+    color: get_color_from_hex("20c100") if self.hover else get_color_from_hex("4d8cf5")
+    on_release: webbrowser.open(self.url)
+
+
+<Li>:
+    icon_color: "20c100"
+    ico: "fa-circle"
+    icon_size: '12sp'
+    text: ""
+    orientation: 'horizontal'
+    spacing: dp(15)
+    size_hint: (1, None)
+    height: self.minimum_height
+    padding: [dp(20), dp(10)]
+    Label:
+        id: bullet
+        markup: True
+        text: u"{}".format(icon(root.ico, root.icon_size, root.icon_color))
+        padding: [dp(0), dp(4)]
+        size_hint: (None, None)
+        size: self.texture_size
+        text_size: self.size
+        pos_hint: {'top': 1}
+    P:
+        id: li
+        markup: True
+        padding_y: dp(0)
+        pos_hint: {'top': 1}
+        size_hint_y: None
+        text_size: self.width, None
+        height: self.texture_size[1]
+        text: root.text
+   
+<Example>:
+    grid: grid  
+    GridLayout:
+        padding: dp(50)
+        spacing: dp(10)
+        id: grid
+        cols: 1
+        size_hint: (1, None)
+        height: self.minimum_height

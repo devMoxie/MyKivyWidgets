@@ -1,0 +1,63 @@
+#:import icon icons.iconfonts.icon
+#:import get_color_from_hex kivy.utils.get_color_from_hex
+
+<Dialog>:
+    grid: grid
+    size_hint: (.8, .8)
+    auto_dismiss: False
+    BoxLayout:
+        orientation: 'vertical'
+        ScrollView:
+            GridLayout:
+                id: grid
+                cols: 1
+                size_hint: (1, None)
+                height: self.minimum_height
+                canvas.before:
+                    Color:
+                        rgba: [0.23, 0.23, 0.23, 1]
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+        Button:
+            text: "OK"
+            size_hint: (None, None)
+            size: [200, 100]
+            on_release: root.dismiss()
+
+<LoadingModal>:
+    size_hint: (.6, .3)
+    auto_dismiss: False
+    H1:
+        text: u"{}  Loading...".format(icon('fa-spinner', '30sp', '4d8cf5'))
+        halign: "center"
+        markup: True
+        color: get_color_from_hex("20c100")
+
+<CloseButton>:
+    markup: True
+    text: u"{}".format(icon('fa-close', '24sp', '20c100')) if self.hover else u"{}".format(icon('fa-close', '24sp', '4d8cf5'))
+    size_hint: (None, None)
+    size: self.texture_size
+    pos_hint: {'center_y': .5}
+    padding: (dp(5), dp(5))
+
+<ModalBtnClose>:
+    size_hint: (.5, None)
+    box: box
+    auto_dismiss: False
+    height: self.box.height + dp(50)
+    BoxLayout:
+        id: box
+        orientation: 'horizontal'
+        size_hint: (1, None)
+        height: self.minimum_height
+        padding: [dp(20), dp(10)]
+        spacing: dp(20)  
+        Li:
+            text: root.msg
+            ico: root.ico
+            icon_color: root.icon_color
+            icon_size: '17sp'
+        CloseButton:
+            on_release: root.dismiss()

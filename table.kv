@@ -1,0 +1,99 @@
+<ToolTip>:
+    font_size: '15sp'
+    size_hint: None, None
+    size: self.texture_size[0]+5, self.texture_size[1]+5
+    padding_x: dp(3)
+    color: 0, 0, 0, 1
+    canvas.before:
+        Color:
+            rgba: 1, 1, 1, 1
+        Rectangle:
+            size: self.size
+            pos: self.pos
+
+<Cell>:
+    size_hint: (None, None)
+    width: dp(150)
+    height: dp(30)
+    text_size: self.size
+    halign: 'center'
+    valign: "middle"
+    padding_x: dp(5)
+    shorten: True
+    shorten_from: "right"
+    canvas.before:
+        Color:
+            rgba: self.dark if (self.is_even is None) else (self.light if self.is_even else self.medium)
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+<SelectableDataCell>:
+    on_selected: self.color = (0.125, 0.757, 0.0, 1) if self.selected else (1, 1, 1, 1)
+
+<TableHeader>:
+    grid: grid
+    bar_width: 0
+    do_scroll: False
+    size_hint: (1, None)
+    effect_cls: "ScrollEffect"
+    height: dp(30)
+    GridLayout:
+        id: grid
+        rows: 1
+        size_hint: (None, None)
+        width: self.minimum_width
+        height: self.minimum_height
+        spacing: [2, 0]
+
+<SelectableRecycleGridLayout, RecycleGridLayout>:
+    col_default_width: dp(150)
+    row_default_height: dp(30)
+    default_size: dp(100), dp(56)
+    default_size_hint: 1, 1
+    size_hint: (None, None)
+    height: self.minimum_height
+    width: self.minimum_width
+
+<FirstCol>:
+    first_col_header: first_col_header
+    rv: rv
+    col_one_rgrid: col_one_rgrid
+    cols: 1
+    size_hint: (None, 1)
+    width: rv.width
+    Cell:
+        id: first_col_header
+    FirstColRv:
+        id: rv
+        col_one_rgrid: col_one_rgrid
+        bar_width: 0
+        do_scroll_y: True
+        do_scroll_x: False
+        effect_cls: "ScrollEffect"
+        viewclass: "SelectableDataCell" if root.selectable else "Cell"
+        SelectableRecycleGridLayout:
+            id: col_one_rgrid
+            cols: 1
+            multiselect: True
+            touch_multiselect: True
+
+<TableData>:
+    rgrid: rgrid
+    bar_width: dp(13)
+    scroll_type: ['bars']
+    bar_color: [0.2, 0.7, 0.9, 1]
+    bar_inactive_color: [0.2, 0.7, 0.9, .5]
+    do_scroll_x: True
+    do_scroll_y: True
+    effect_cls: "ScrollEffect"
+    viewclass: "Cell"
+    size_hint_max_x: rgrid.width
+    RecycleGridLayout:
+        id: rgrid
+        rows: root.nrows
+        cols: root.ncols
+        spacing: [2, 0]
+
+<Table>:
+    spacing: [4, 0]
