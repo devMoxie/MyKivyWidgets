@@ -1,39 +1,13 @@
-from kivy.uix.label import Label
-from kivy.uix.scrollview import ScrollView
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.recycleview import RecycleView
-from kivy.uix.recycleview.views import RecycleDataViewBehavior
-from kivy.uix.behaviors import FocusBehavior
-from kivy.uix.recycleview.layout import LayoutSelectionBehavior
-from kivy.uix.recyclegridlayout import RecycleGridLayout
-from kivy.properties import BooleanProperty, ListProperty, ObjectProperty
-from kivy.core.window import Window
-from kivy.clock import Clock
-
 """
     Table
     =====
 
     The :class:`Table` widget is an advanced data table layout.
 
-    Notes
-    -----
-
-        * An app crash can be triggered with a combination of scrolling and
-          window resizing. See this post regarding max recursion errors. The
-          issue with data misplacement mentioned in the post has been solved.
-
-          https://stackoverflow.com/q/44573674
-
-        * Tooltip functionality is based on this post:
-
-          https://stackoverflow.com/a/34471497/1880836
-
     Features
     --------
 
-        * Vertical and horizonal scrolling utilizing `RecycleView` for
-          fast rendering.
+        * Vertical and horizonal scrolling utilizing `RecycleView` for fast rendering.
 
         * Fixed header of column titles when scrolling vertically.
 
@@ -43,8 +17,22 @@ from kivy.clock import Clock
 
         * Selectable rows by clicking on the value in the first column.
 
+    Notes
+    -----
+
+        * An app crash can be triggered with rapid scrolling and quick window resizing.
+          See this post regarding max recursion errors. The issue with data misplacement
+          mentioned in the post has been solved.
+
+          https://stackoverflow.com/q/44573674
+
     Usage
     =====
+
+    Requirements
+    ------------
+
+        * `tooltip` module
 
     Parameters
     ----------
@@ -53,24 +41,12 @@ from kivy.clock import Clock
             Required. This is the data to be displayed.
 
         `pre_selected_rows` : list of int
-            Optional. A list of indexes of rows that will be in the `selected` state.
+            Optional. A list of indexes of rows that will be in the `selected` state
+            on initialization.
 
         `selectable` : bool
             Defaults to `False`. If `True`, allows for selection behavior. Otherwise,
             that behavior is ignored.
-
-    Attributes
-    ----------
-
-        `selected_rows` : ListProperty
-            A kivy property storing a list of indexes that have been selected. It is
-            initialized with `pre_selected_rows`.
-
-        `pre_selected_rows` : ListProperty
-            A list of indexes of rows that will be in the `selected` state on `Table`
-            instantiation.
-
-            TODO: Not sure if this necessary.
 
     Events
     ------
@@ -83,42 +59,59 @@ from kivy.clock import Clock
     Example
     -------::
 
-        from kivy.app import App
-        from random import sample
-        from collections import OrderedDict
+        if __name__ == '__main__':
+            from kivy.app import App
+            from kivy.lang import Builder
 
-        class TableApp(App):
-            def build(self):
-                data = []
-                pre_selected_rows = sample(range(30), 10)
+            from random import sample
+            from collections import OrderedDict
 
-                keys = ["Title Col: {}".format(i) for i in range(15)]
+            Builder.load_file("tooltip.kv")
 
-                for nrow in range(30):
-                    row = OrderedDict.fromkeys(keys)
-                    for i, key in enumerate(keys):
-                        row[key] = "Data col: {}, row: {}".format(i, nrow)
+            class TableApp(App):
+                def build(self):
+                    Window.size = (960, 640)
+                    data = []
+                    pre_selected_rows = sample(range(30), 10)
 
-                        if i % 3 == 0:
-                            row[key] = row[key] + ". Extra long label. " * 2
-                    data.append(row)
+                    rand_row = sample(range(30), 10)
+                    rand_col = sample(range(15), 5)
 
-                return Table(list_dicts=data, pre_selected_rows=pre_selected_rows, selectable=True)
+                    keys = ["Title Col: {}".format(i) for i in range(15)]
 
-        TableApp().run()
+                    for nrow in range(30):
+                        row = OrderedDict.fromkeys(keys)
+                        for ncol, key in enumerate(keys):
+                            row[key] = "row: {}, col: {}".format(nrow, ncol)
+
+                            if nrow in rand_row and ncol in rand_col:
+                                row[key] = row[key] + "; Extra long text."
+
+                        data.append(row)
+
+                    return Table(list_dicts=data, selectable=True, pre_selected_rows=pre_selected_rows)
+
+            TableApp().run()
 """
 
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.recycleview import RecycleView
+from kivy.uix.recycleview.views import RecycleDataViewBehavior
+from kivy.uix.behaviors import FocusBehavior
+from kivy.uix.recycleview.layout import LayoutSelectionBehavior
+from kivy.uix.recyclegridlayout import RecycleGridLayout
+from kivy.properties import ObjectProperty, StringProperty
+from kivy.properties import BooleanProperty, ListProperty
+from kivy.core.window import Window
 
-class ToolTip(Label):
-    """Class declaration so that it can be called programmatically and styled in kv"""
-    pass
+from tooltip import ToolTipLabel, ToolTip
 
 
-class Cell(Label):
+class Cell(ToolTipLabel):
     """Defines the class for a table cell widget.
 
-        The `Cell` class incorporates a hover effect with a tooltip for text that
-        has been shortened inorder to display the full text of the cell.
+        The `Cell` class inherits from ToolTipLabel to provide a hover effect with a tooltip
+        for text that has been shortened inorder to display the full text of the cell.
 
         Attributes
         ----------
@@ -126,62 +119,25 @@ class Cell(Label):
         `is_even` : BooleanProperty
             When `Table` is passed a list of dicts, where each dict represents a row,
             `is_even` is assigned True/False if it's index in the list is even/odd.
-            This is used to determin the back ground color of the row. If the row is
+            This is used to determine the background color of the row. If the row is
             the table header, the is_even remains `None` and is assigned it's own
             background color.
 
-        `dark`, `medium`, `light` : ListProperty
-            `rgba` color codes to be given to the `canvas.before` property.
-
-        'tooltip' : None
-            Initialized in init for clarity. To be reassigned if text is shortend.
+        `selected : BooleanProperty
+            If the first column is composed of `SelectableDataCell`s, this property is used to
+            visually indicate that the row has been selected.
     """
 
     is_even = BooleanProperty(None, allownone=True)
-    dark = ListProperty([0.165, 0.165, 0.165, 1])
-    medium = ListProperty([0.23, 0.23, 0.23, 1])
-    light = ListProperty([0.2, 0.2, 0.2, 1])
+    selected = BooleanProperty(False)
 
     def __init__(self, *args, **kwargs):
-        Window.bind(mouse_pos=self.on_mouse_pos)
         super(Cell, self).__init__(*args, **kwargs)
-        self.tooltip = None
 
-    def on_mouse_pos(self, window, pos):
-        """A callback called when the mouse position is over the widget.
-
-            If the mouse is within the `Cell`'s bounding box, this method
-             schedules `display_tooltip` for the next `Clock` cycle with a
-             time delta of 0.6s.
-
-            Parameters
-            ----------
-            `window` : -
-                Unused
-
-            `pos` : tuple of float
-                Position of the mouse when the even is triggered.
-        """
-
-        if not self.get_root_window() or not self.is_shortened:
-            return
-
-        Clock.unschedule(self.display_tooltip)
-        self.close_tooltip()
-
-        # to_widget changes coords from window to local coords.
-        if self.collide_point(*self.to_widget(*pos)):
-            Clock.schedule_once(self.display_tooltip, .6)
-
-    def close_tooltip(self):
-        Window.remove_widget(self.tooltip)
-
-    def display_tooltip(self, *args):
-        """Adds tooltip to `Window` relative to the position of `self`."""
-
-        pos = self.to_window(self.pos[0], self.pos[1], relative=False)
-        self.tooltip = ToolTip(text=self.text, pos=pos)
-        Window.add_widget(self.tooltip)
+    def on_pos(self, instance, value):
+        for child in Window.children:
+            if type(child) == ToolTip:
+                Window.remove_widget(child)
 
 
 class SelectableDataCell(RecycleDataViewBehavior, Cell):
@@ -199,8 +155,8 @@ class SelectableDataCell(RecycleDataViewBehavior, Cell):
         selected : BooleanProperty
             Set to `True` is selected, otherwise `False`.
     """
+
     index = None
-    selected = BooleanProperty(False)
 
     def __init__(self, *args, **kwargs):
         super(SelectableDataCell, self).__init__(*args, **kwargs)
@@ -223,14 +179,13 @@ class SelectableDataCell(RecycleDataViewBehavior, Cell):
                 This is a list of dicts whose keys map to the corresponding property
                 names of the viewclass.
         """
-
         self.index = index
 
         # Need to set self.selected before the rv.data is sent to the view and
         # adds the node to super's self.selected_nodes via select_node(self.index)
         if data['selected'] is True:
             setattr(self, 'selected', True)
-            rv.col_one_rgrid.select_node(self.index)
+            rv.grid.select_node(self.index)
 
         return super(SelectableDataCell, self).refresh_view_attrs(
             rv, index, data)
@@ -249,7 +204,6 @@ class SelectableDataCell(RecycleDataViewBehavior, Cell):
             `touch` : MouseMotionEvent
                 Description of 'param'
         """
-
         if super(SelectableDataCell, self).on_touch_down(touch):
             return True
         if self.collide_point(*touch.pos):
@@ -281,188 +235,163 @@ class SelectableDataCell(RecycleDataViewBehavior, Cell):
 
         self.selected = is_selected
         rv.data[index]['selected'] = self.selected
-        rv.selected_rows = [i for i, row in enumerate(rv.data) if row['selected'] is True]
+        rv.selected_cells = [i for i, row in enumerate(rv.data) if row['selected'] is True]
 
 
 class SelectableRecycleGridLayout(FocusBehavior, LayoutSelectionBehavior, RecycleGridLayout):
     """This class adds focus and selection behavior to RecycleGridLayout."""
-    pass
+
+    def __init__(self, *args, **kwargs):
+        super(SelectableRecycleGridLayout, self).__init__(*args, **kwargs)
+        self.fbind('children', self.hover_on_scroll)
+
+    def hover_on_scroll(self, instance, children):
+        """This method updates the hover property when the mouse is not
+            moving but the scrollview is.
+        """
+
+        for ch in children:
+            if ch.collide_point(*ch.to_widget(*Window.mouse_pos)):
+                ch.hover = True
+            else:
+                ch.hover = False
 
 
 class FirstColRv(RecycleView):
     """A RecycleView based class that adds the attribute:
 
-        selected_rows : ListProperty
+        selected_cells : ListProperty
             A kivy property that can respond to changes with a callback.
     """
-    selected_rows = ListProperty([])
-
-
-class FirstCol(GridLayout):
-    """A widget that composes the first column of a `Table` widget.
-
-        Attributes
-        ----------
-
-        first_col_header : ObjectProperty
-
-        rv : ObjectProperty
-
-        col_one_grid : ObjectProperty
-
-        selectable : bool
-            If `True`, the `rv.viewclass` is set to "SelectableDataCell" otherwise
-            it is set to "Cell".
-
-        Parameters
-        ----------
-
-        list_dicts : list of dict
-            Required.
-
-        selectable : bool
-            Optional. Defaults to False
-
-        pre_selected_rows : list of int
-            A list of indexes that are to set as selected on widget initialization.
-            Optional. Defaults to an empty list.
-    """
-
-    first_col_header = ObjectProperty(None)
-    rv = ObjectProperty(None)
-    col_one_rgrid = ObjectProperty(None)
-
-    def __init__(self, list_dicts=[], selectable=False, pre_selected_rows=[], *args, **kwargs):
-        self.selectable = selectable
-
-        super(FirstCol, self).__init__(*args, **kwargs)
-
-        self.first_col_header.text = list_dicts[0].items()[0][0]
-
-        for i, dct in enumerate(list_dicts):
-            text = dct.values()[0]
-            is_even = i % 2 == 0
-            selected = i in pre_selected_rows
-            self.rv.data.append({'text': text,
-                                 'is_even': is_even,
-                                 'selected': selected})
-
-
-class TableHeader(ScrollView):
-    """This class defines the layout for the table header."""
-    pass
-
-
-class TableData(RecycleView):
-    """The `Table` data component right of the first column and below the header.
-
-        This `RecycleView` widget is utilizies `RecycleGridLayout` which
-        appends `Cell` instances as children.
-
-        Attributes
-        ----------
-
-        ncols : int
-
-        nrows : int
-
-        data : list of dict
-            This attribute is inherited from `RecycleView` and must be set.
-            `RecycleView` takes in `data` and manages the insantiation of
-            `viewclass` widgets and adds them to `RecycleGridLayout`.
-
-        viewclass : str
-            The class of the widgets to be attached to the layout. This is
-            defined in `<TableData>` definition in `table.kv`.
-    """
-
-    def __init__(self, list_dicts=[], *args, **kwargs):
-        if list_dicts:
-            cols = len(list_dicts[0])
-            self.ncols = cols - 1  # less the first column
-            self.nrows = len(list_dicts)
-
-            self.data = []
-
-            super(TableData, self).__init__(*args, **kwargs)
-
-            for i, ord_dict in enumerate(list_dicts):
-                is_even = i % 2 == 0
-
-                # [1:] less the 1st column value
-                for text in ord_dict.values()[1:]:
-                    if text is None:
-                        text = " "
-                    self.data.append({'text': text, 'is_even': is_even})
+    selected_cells = ListProperty([])
 
 
 class Table(GridLayout):
     """This is the top level widget returned from this module.
 
-        Note
-        ----
-
         See module documentation at the top of this file for more
         information on how to use this module.
+
+        Attributes
+        ----------
+
+            `selected_rows` : ListProperty
+                A kivy property storing a list of indexes that have been selected. It is
+                initialized with `pre_selected_rows`.
+
+            `pre_selected_rows` : ListProperty
+                A list of indexes of rows that will be in the `selected` state on `Table`
+                instantiation.
+
+            `first_col_header` : StringProperty
+                A Kivy property bound to the first column header's text property found in `table.kv`
+
+            `first_col_rv` : ObjectProperty
+                A Kivy property referencing the `FirstColRv` object instantiated by `Table`.
+
+            `table_header_scrlv` : ObjectProperty
+                A kivy property referencing the `TableHeaderScrlv` object instantiated by `Table`.
+                The `TableHeaderScrlv` layout object is defined in `table.kv`.
+
+            `main_table_rv` : ObjectProperty
+                A kivy property referencing the `MainTableRv` object instantiated by `Table`.
+                The `MainTableRv` layout object is defined in `table.kv`.
     """
 
     selected_rows = ListProperty([])
     pre_selected_rows = ListProperty([])
 
+    first_col_header = StringProperty("")
+    first_col_rv = ObjectProperty(None)
+
+    table_header_scrlv = ObjectProperty(None)
+    main_table_rv = ObjectProperty(None)
+
     def __init__(self, list_dicts=[], selectable=False, pre_selected_rows=[], *args, **kwargs):
+        self.selectable = selectable
         super(Table, self).__init__(*args, **kwargs)
+
+        self.list_dicts = list_dicts
         self.pre_selected_rows = pre_selected_rows
-        self.cols = 2
 
         if list_dicts:
-            self.first_col = FirstCol(list_dicts=list_dicts,
-                                      selectable=selectable,
-                                      pre_selected_rows=pre_selected_rows)
+            self.first_col_header = list_dicts[0].items()[0][0]
+            self.set_first_col_data(list_dicts)
+            self.set_table_headers(list_dicts)
+            self.set_main_table_data(list_dicts)
 
-            self.header = TableHeader()
+            # Bind self.selected_rows to first_col_rv.selected_cells
+            self.first_col_rv.bind(selected_cells=self.setter('selected_rows'))
 
-            # Less the first column -> [:1]
-            for title in list_dicts[0].keys()[1:]:
-                self.header.grid.add_widget(Cell(text=title))
+            # Bind scroll behaviors of header, first column and table.
+            self.main_table_rv.fbind('scroll_x', self.scroll_with_header)
+            self.first_col_rv.fbind('scroll_y', self.scroll_with_first_col)
+            self.main_table_rv.fbind('scroll_y', self.scroll_with_data)
 
-            self.table_data = TableData(list_dicts=list_dicts)
+    def set_first_col_data(self, list_dicts):
+        """Appends values to the `data` property of the `first_col_rv` object."""
 
-            data_container = GridLayout(cols=1)
-            data_container.add_widget(self.header)
-            data_container.add_widget(self.table_data)
+        for row_num, dct in enumerate(list_dicts):
+            text = dct.values()[0]
 
-            self.add_widget(self.first_col)
-            self.add_widget(data_container)
+            self.first_col_rv.data.append(
+                {'text': text if text is not None else " ",
+                 'is_even': True if row_num % 2 is 0 else False,
+                 'selected': row_num in self.pre_selected_rows, }
+            )
 
-            # Bind the rows that are selected to self.selected_rows so it is an instance
-            # # property accessible from the calling class.
-            self.first_col.rv.bind(selected_rows=self.update_selected_rows)
+    def set_table_headers(self, list_dicts):
+        """Adds `Cell` widgets to the `GridLayout` child of `table_header_scrlv`."""
 
-            # Bind scroll behavior of header, first column and table data together.
-            self.table_data.fbind('scroll_x', self.scroll_with_header)
-            self.first_col.rv.fbind('scroll_y', self.scroll_with_first_col)
-            self.table_data.fbind('scroll_y', self.scroll_with_data)
+        # Less the first column key.
+        for title in list_dicts[0].keys()[1:]:
+            self.table_header_scrlv.grid.add_widget(Cell(text=title))
 
-    def on_selected_rows(self, obj, value):
-        pass
+    def set_main_table_data(self, list_dicts):
+        """Appends values to the `data` property of the `main_table_rv` object."""
 
-    def update_selected_rows(self, obj, value):
-        self.selected_rows = value
+        self.main_table_rv.grid.cols = len(list_dicts[0]) - 1
+
+        for row_num, ord_dict in enumerate(list_dicts):
+
+            for text in ord_dict.values()[1:]:
+                self.main_table_rv.data.append(
+                    {'text': text if text is not None else " ",
+                     'is_even': True if row_num % 2 is 0 else False,
+                     "selected": False,
+                     "row": row_num, }
+                )
 
     def scroll_with_header(self, obj, value):
-        self.header.scroll_x = value
+        self.table_header_scrlv.scroll_x = value
 
     def scroll_with_data(self, obj, value):
-        self.first_col.rv.scroll_y = value
+        self.first_col_rv.scroll_y = value
 
     def scroll_with_first_col(self, obj, value):
-        self.table_data.scroll_y = value
+        self.main_table_rv.scroll_y = value
+
+    def on_selected_rows(self, instance, row_nums):
+        """Synx main_table_rv cells' selected state with self.selected_rows."""
+
+        # could probable keep track of the previous list of indexes, get the diff with new list of
+        # indexes and set accordingly instead of looping through the whole data set
+        for d in self.main_table_rv.data:
+            if d["row"] in row_nums:
+                d["selected"] = True
+            else:
+                d["selected"] = False
+
+        self.main_table_rv.refresh_from_data()
 
 
 if __name__ == '__main__':
     from kivy.app import App
+    from kivy.lang import Builder
     from random import sample
     from collections import OrderedDict
+
+    Builder.load_file("tooltip.kv")
 
     class TableApp(App):
         def build(self):
@@ -470,15 +399,19 @@ if __name__ == '__main__':
             data = []
             pre_selected_rows = sample(range(30), 10)
 
+            rand_row = sample(range(30), 10)
+            rand_col = sample(range(15), 5)
+
             keys = ["Title Col: {}".format(i) for i in range(15)]
 
             for nrow in range(30):
                 row = OrderedDict.fromkeys(keys)
-                for i, key in enumerate(keys):
-                    row[key] = "Data col: {}, row: {}".format(i, nrow)
+                for ncol, key in enumerate(keys):
+                    row[key] = "row: {}, col: {}".format(nrow, ncol)
 
-                    if i % 3 == 0:
-                        row[key] = row[key] + ". Extra long label. " * 2
+                    if nrow in rand_row and ncol in rand_col:
+                        row[key] = row[key] + "; Extra long text."
+
                 data.append(row)
 
             return Table(list_dicts=data, selectable=True, pre_selected_rows=pre_selected_rows)

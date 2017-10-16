@@ -1,6 +1,7 @@
 from kivy.uix.modalview import ModalView
 from kivy.uix.popup import Popup
 from kivy.uix.label import Label
+from kivy.properties import ObjectProperty
 from kivy.lang import Builder
 
 from icons.iconfonts import register
@@ -136,20 +137,43 @@ class ModalBtnClose(ModalView):
         super(ModalBtnClose, self).__init__(*args, **kwargs)
 
 
+class ContentModal(Popup):
+    """docstring for ContentModal"""
+
+    box = ObjectProperty(None)
+    modal_content = ObjectProperty(None)
+
+    def __init__(self, modal_content=None, title="", *args, **kwargs):
+        self.modal_content = modal_content
+
+        super(ContentModal, self).__init__(*args, **kwargs)
+        self.box.add_widget(self.modal_content)
+
+        self.title = title
+        self.title_align = 'center'
+        self.title_size = '18sp'
+
+        # Hack: Enable markup on the the title Label.
+        self.children[0].children[2].markup = True
+
+
 if __name__ == '__main__':
     from kivy.app import App
     from kivy.uix.anchorlayout import AnchorLayout
     from kivy.uix.boxlayout import BoxLayout
+    from kivy.uix.scrollview import ScrollView
+    from kivy.uix.gridlayout import GridLayout
     from kivy.uix.button import Button
     from kivy.clock import Clock
     from icons.iconfonts import icon
+    from typography import P
 
     class RootWidget(AnchorLayout):
 
         def __init__(self, *args, **kwargs):
             super(RootWidget, self).__init__(*args, **kwargs)
 
-            cont = BoxLayout(orientation='horizontal', size_hint=(None, None), width=1020, height=120)
+            cont = BoxLayout(orientation='horizontal', size_hint=(None, None), width=1360, height=120)
 
             btn1 = Button(text="Open Dialog", size_hint=(None, None), size=(340, 120))
             btn1.bind(on_release=self.open_dialog)
@@ -160,7 +184,10 @@ if __name__ == '__main__':
             btn3 = Button(text="Open ModalBtnClose", size_hint=(None, None), size=(340, 120))
             btn3.bind(on_release=self.open_modal_btn_close)
 
-            for b in [btn1, btn2, btn3]:
+            btn4 = Button(text="Open ContentModal", size_hint=(None, None), size=(340, 120))
+            btn4.bind(on_release=self.open_content_modal)
+
+            for b in [btn1, btn2, btn3, btn4]:
                 cont.add_widget(b)
 
             self.add_widget(cont)
@@ -183,6 +210,22 @@ if __name__ == '__main__':
             mod = ModalBtnClose(msg="Are you sure you made the right move?",
                                 ico="fa-warning",
                                 icon_color="ff2222")
+            mod.open()
+
+        def open_content_modal(self, *args):
+            t1 = "This also leads to some other annoying behaviour - as well as the text not wrapping, you might have observed that the halign and valign properties seem to do nothing by default."
+
+            sv = ScrollView()
+            grid = GridLayout(cols=1, size_hint_y=None)
+            grid.bind(minimum_height=grid.setter('height'))
+
+            for i in range(20):
+                grid.add_widget(P(text=t1))
+
+            sv.add_widget(grid)
+
+            title = u"{}  Content Modal".format(icon("fa-bell-o", "18sp", "4d8cf5"))
+            mod = ContentModal(modal_content=sv, title=title)
             mod.open()
 
     class TestApp(App):

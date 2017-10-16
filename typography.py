@@ -75,6 +75,22 @@ class Lead(Label):
 
 
 class Li(BoxLayout):
+    """List item widget.
+
+        Attributes
+        ----------
+
+        text : str
+
+        ico : str
+            Name of the icon to be used as the bullet.
+
+        icon_color : str
+            Hex code.
+
+        icon_size : str
+    """
+
     text = StringProperty(None)
     ico = StringProperty(None)
     icon_color = StringProperty(None)
@@ -85,6 +101,19 @@ class Li(BoxLayout):
 
 
 class Link(ExtendedButtonBehavior, P):
+    """Provides link behavior to text.
+
+        This widget has a link hover behavior and opens up attr `url`
+        in the system's browser. the module `webbrowser` is imported in
+        `typography.kv`.
+
+        Attributes
+        ----------
+
+        url : str
+            The url string. "http://" is required a required prefix.
+    """
+
     url = StringProperty(None)
 
 

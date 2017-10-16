@@ -1,37 +1,71 @@
-<ToolTip>:
-    font_size: '15sp'
-    size_hint: None, None
-    size: self.texture_size[0]+5, self.texture_size[1]+5
-    padding_x: dp(3)
-    color: 0, 0, 0, 1
-    canvas.before:
-        Color:
-            rgba: 1, 1, 1, 1
-        Rectangle:
-            size: self.size
-            pos: self.pos
+#:set light_gray [0.8, 0.8, 0.8, 1]
+#:set med_gray [0.7, 0.7, 0.7, 1]
+#:set white [1, 1, 1, 1]
+#:set black [0, 0, 0, 1]
+#:set light_blue [0.7647058823529411, 0.8784313725490196, 0.9137254901960784, 1]
+#:set light_green [0.5764705882352941, 0.788235294117647, 0.5803921568627451, 1]
+#:set hover_bg [0.023529411764705882, 0.2823529411764706, 0.6549019607843137, 1]
 
 <Cell>:
-    size_hint: (None, None)
-    width: dp(150)
+    size_hint: (1, None)
     height: dp(30)
+    font_size: "14sp"
     text_size: self.size
     halign: 'center'
     valign: "middle"
-    padding_x: dp(5)
+    padding_x: dp(3)
     shorten: True
     shorten_from: "right"
+    color: black
     canvas.before:
         Color:
-            rgba: self.dark if (self.is_even is None) else (self.light if self.is_even else self.medium)
+            rgba:
+                light_green if self.selected else \
+                light_blue if self.is_even is None else \
+                light_gray if self.is_even else \
+                med_gray
         Rectangle:
             pos: self.pos
             size: self.size
 
 <SelectableDataCell>:
-    on_selected: self.color = (0.125, 0.757, 0.0, 1) if self.selected else (1, 1, 1, 1)
+    font_size: "15sp"
+    halign: "left"
+    padding: [dp(10), 0]
+    bold: True if self.selected else False
+    color: white if self.hover else black
+    canvas.before:
+        Color:
+            rgba: 
+                hover_bg if self.hover else \
+                light_green if self.selected else \
+                light_gray if self.is_even else \
+                med_gray
+        Rectangle:
+            pos: self.pos
+            size: self.size
 
-<TableHeader>:
+<FirstColRv>:
+    grid: grid
+    bar_width: 0
+    do_scroll_y: True
+    do_scroll_x: False
+    effect_cls: "ScrollEffect"
+    SelectableRecycleGridLayout:
+        id: grid
+        cols: 1
+        spacing: [0, dp(.5)]
+        multiselect: True
+        touch_multiselect: True
+        size_hint: (None, None)
+        height: self.minimum_height
+        width: self.minimum_width 
+        default_size_hint: 1, 1
+        default_size: dp(100), dp(30)
+        col_default_width: dp(135)    
+        row_default_height: dp(30)
+
+<TableHeaderScrlv@ScrollView>:
     grid: grid
     bar_width: 0
     do_scroll: False
@@ -44,56 +78,57 @@
         size_hint: (None, None)
         width: self.minimum_width
         height: self.minimum_height
-        spacing: [2, 0]
+        spacing: [dp(.5), 0]
+        col_default_width: dp(135)
+        cols_minimum: {0: dp(135)} 
 
-<SelectableRecycleGridLayout, RecycleGridLayout>:
-    col_default_width: dp(150)
-    row_default_height: dp(30)
-    default_size: dp(100), dp(56)
-    default_size_hint: 1, 1
-    size_hint: (None, None)
-    height: self.minimum_height
-    width: self.minimum_width
-
-<FirstCol>:
-    first_col_header: first_col_header
-    rv: rv
-    col_one_rgrid: col_one_rgrid
-    cols: 1
-    size_hint: (None, 1)
-    width: rv.width
-    Cell:
-        id: first_col_header
-    FirstColRv:
-        id: rv
-        col_one_rgrid: col_one_rgrid
-        bar_width: 0
-        do_scroll_y: True
-        do_scroll_x: False
-        effect_cls: "ScrollEffect"
-        viewclass: "SelectableDataCell" if root.selectable else "Cell"
-        SelectableRecycleGridLayout:
-            id: col_one_rgrid
-            cols: 1
-            multiselect: True
-            touch_multiselect: True
-
-<TableData>:
-    rgrid: rgrid
+<MainTableRv@RecycleView>:
+    grid: grid
     bar_width: dp(13)
-    scroll_type: ['bars']
+    scroll_type: ['bars', 'content']
     bar_color: [0.2, 0.7, 0.9, 1]
-    bar_inactive_color: [0.2, 0.7, 0.9, .5]
+    bar_inactive_color: [0.2, 0.7, 0.9, .7]
     do_scroll_x: True
     do_scroll_y: True
     effect_cls: "ScrollEffect"
     viewclass: "Cell"
-    size_hint_max_x: rgrid.width
+    scroll_wheel_distance: dp(30.5)
     RecycleGridLayout:
-        id: rgrid
-        rows: root.nrows
-        cols: root.ncols
-        spacing: [2, 0]
+        id: grid
+        spacing: [dp(.5), dp(.5)]
+        size_hint: (None, None)
+        height: self.minimum_height
+        width: self.minimum_width 
+        default_size_hint: 1, 1
+        default_size: dp(100), dp(30)
+        col_default_width: dp(135)
+        row_default_height: dp(30)
 
 <Table>:
-    spacing: [4, 0]
+    first_col_rv: first_col_rv
+    table_header_scrlv: table_header_scrlv
+    main_table_rv: main_table_rv
+    cols: 2
+    spacing: [dp(.5), dp(.5)]
+
+    GridLayout:
+        cols: 1
+        size_hint_x: None
+        width: dp(135)
+        spacing: [0, dp(.5)]
+        Cell:
+            text: root.first_col_header
+            size_hint: (None, None)
+            width: dp(135)
+        FirstColRv:
+            id: first_col_rv
+            viewclass: "SelectableDataCell" if root.selectable else "Cell"
+    GridLayout:
+        cols: 1
+        spacing: [0, dp(.5)]
+        padding: [0, 0, dp(.5), 0]
+        TableHeaderScrlv:
+            id: table_header_scrlv
+
+        MainTableRv:
+            id: main_table_rv
